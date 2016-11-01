@@ -14,11 +14,12 @@ import play.api.mvc._
 
 class SimulationController @Inject() (configuration: Configuration, actorSystem: ActorSystem) extends Controller {
   //@Inject() (val environment: play.api.Environment, val configuration: play.api.Configuration) extends AkkaController {
+  import ch.octo.cffpoc.Serializers._
 
   lazy val gtfsSystem = GTFSSystem.load(configuration.getString("gtfs.system.path").get)
 
   def agencies = Action {
-    Ok("haha") //Json.toJson(gtfsSystem.agencies.toList))
+    Ok(Json.toJson(gtfsSystem.agencies.values.toList))
   }
 
 }
