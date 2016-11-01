@@ -1,6 +1,5 @@
 package ch.octo.cffpoc.gtfs
 
-import ch.octo.cffpoc.position.TimedPosition
 import org.joda.time.DateTime
 
 /**

@@ -18,7 +18,7 @@ class SimulationController @Inject() (configuration: Configuration, actorSystem:
   lazy val gtfsSystem = GTFSSystem.load(configuration.getString("gtfs.system.path").get)
 
   def agencies = Action {
-    Ok("haha")//Json.toJson(gtfsSystem.agencies.toList))
+    Ok("haha") //Json.toJson(gtfsSystem.agencies.toList))
   }
 
 }

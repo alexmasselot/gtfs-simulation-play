@@ -2,7 +2,6 @@ package ch.octo.cffpoc.gtfs.simulator
 
 import ch.octo.cffpoc.gtfs.{ Trip, TripCollection }
 import ch.octo.cffpoc.models.GeoLocBearing
-import ch.octo.cffpoc.position.TimedPosition
 import org.apache.commons.logging.LogFactory
 import org.joda.time.LocalDate
 
