@@ -1,0 +1,1 @@
+GET        /simulator/agency        ch.octo.cffpoc.controllers.SimulationController.agencies
