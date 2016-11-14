@@ -12,7 +12,7 @@ import play.api.mvc._
  * Created by alex on 30/03/16.
  */
 
-class SimulationController @Inject() (configuration: Configuration, actorSystem: ActorSystem) extends Controller {
+class StaticDataController @Inject() (configuration: Configuration, actorSystem: ActorSystem) extends Controller {
   //@Inject() (val environment: play.api.Environment, val configuration: play.api.Configuration) extends AkkaController {
   import ch.octo.cffpoc.Serializers._
 
@@ -20,6 +20,9 @@ class SimulationController @Inject() (configuration: Configuration, actorSystem:
 
   def agencies = Action {
     Ok(Json.toJson(gtfsSystem.agencies.values.toList))
+  }
+  def stops = Action {
+    Ok(Json.toJson(gtfsSystem.stops.values.toList))
   }
 
 }

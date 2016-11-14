@@ -7,7 +7,7 @@ import org.joda.time.LocalDate
 /**
  * Created by alex on 03/05/16.
  */
-class GTFSSystem(val trips: TripCollection, val agencies: Map[AgencyId, RawAgency], exceptionDates: Map[LocalDate, Set[ServiceId]]) {
+class GTFSSystem(val trips: TripCollection, val stops: Map[StopId, RawStop], val agencies: Map[AgencyId, RawAgency], exceptionDates: Map[LocalDate, Set[ServiceId]]) {
 
   def countTrips = trips.size
 
@@ -122,7 +122,7 @@ object GTFSSystem {
     LOGGER.info(s"loading $rootSrc/$FILENAME_TRIPS")
     val trips = loadTrips(rootSrc, stopTimesByTripId = stopTimesByTripId, routes = routes)
     LOGGER.info("finished loading")
-    new GTFSSystem(trips, agencies = agencies, exceptionDates = exceptionDates)
+    new GTFSSystem(trips, stops, agencies = agencies, exceptionDates = exceptionDates)
   }
 
   /**

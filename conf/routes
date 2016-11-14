@@ -1,1 +1,4 @@
-GET        /simulator/agency        ch.octo.cffpoc.controllers.SimulationController.agencies
+GET        /static-data/agency         ch.octo.cffpoc.controllers.StaticDataController.agencies
+GET        /static-data/stop           ch.octo.cffpoc.controllers.StaticDataController.stops
+GET        /test/tick                  ch.octo.cffpoc.controllers.TickController.tick
+GET        /simulator/positions        ch.octo.cffpoc.controllers.SimulatorController.positions

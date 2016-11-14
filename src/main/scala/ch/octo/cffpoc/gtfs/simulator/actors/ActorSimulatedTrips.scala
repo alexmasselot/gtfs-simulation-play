@@ -21,6 +21,6 @@ class ActorSimulatedTrips(actorSink: ActorRef,
     val actTrip = context.actorOf(Props(new ActorDelayedSimulatedTrip(actorSink, timeAccelerator, trip, date, averagSecondIncrement)), name = s"simulated-trip-${trip.tripId.value}")
   })
   override def receive: Receive = {
-    case x => log.info(x.toString)
+    case x => log.info(s"ActorSimulatedTrips received $x")
   }
 }

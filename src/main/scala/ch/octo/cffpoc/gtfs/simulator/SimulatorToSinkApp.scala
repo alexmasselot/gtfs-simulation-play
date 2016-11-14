@@ -21,8 +21,8 @@ import scala.concurrent.ExecutionContext
  * Created by alex on 07.10.16.
  */
 class SimulatorToSinkApp extends SimulatorAppTrait {
-  val LOGGER = LogFactory.getLog(SimulatorToFileApp.getClass)
-  val path = "src/main/resources/gtfs_complete"
+  val LOGGER = LogFactory.getLog(SimulatorToSinkApp.getClass)
+  val path = "src/main/resources/gtfs_gondola"
 
   def actorRefKafkaSink(system: ActorSystem)(implicit executioncontext: ExecutionContext, materilizer: ActorMaterializer): ActorRef = {
 
