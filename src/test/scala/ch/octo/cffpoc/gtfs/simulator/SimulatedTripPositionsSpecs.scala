@@ -36,7 +36,10 @@ class SimulatedTripPositionsSpecs extends FlatSpec with Matchers {
 
   it should " simulated, with 1 minute intervals" in {
     val simulatedTripPositions = SimulatedTripPositions(trip1, RawCalendarDateReader.dateFromString("20010116"), 60)
-    simulatedTripPositions.size should be(33)
+    simulatedTripPositions.size should be(34)
+    simulatedTripPositions.positions.head.status should be(SimulatedPositionStatus.START)
+    simulatedTripPositions.positions(1).status should be(SimulatedPositionStatus.MOVING)
+    simulatedTripPositions.positions.last.status should be(SimulatedPositionStatus.END)
 
     List(0, 2, 3, 31, 32).map(i => simulatedTripPositions.positions(i))
       .map(_.lat).map(x => (x * 1000).round / 1000.0) should equal(List(45.0, 45.0, 45.03, 44.35, 44.3))
@@ -48,6 +51,8 @@ class SimulatedTripPositionsSpecs extends FlatSpec with Matchers {
   def toSimTrip(id: String,
                 fromTime: String,
                 toTime: String,
+                fromStop:String,
+                toStop:String,
                 fromLat: Double,
                 toLat: Double,
                 fromLng: Double,
@@ -65,18 +70,24 @@ class SimulatedTripPositionsSpecs extends FlatSpec with Matchers {
       x0 + (t - fromTS).toDouble / (toTS - fromTS) * (x1 - x0)
     }
     val pos = (fromTS to toTS by 60).map({ t =>
-      SimulatedPosition(t, interpolate(t, fromLat, toLat), interpolate(t, fromLng, toLng), tripId, agencyId, routeShortName, Some(StopId("stp")))
+      SimulatedPosition(t, interpolate(t, fromLat, toLat), interpolate(t, fromLng, toLng), tripId, agencyId, routeShortName, SimulatedPositionStatus.MOVING, None)
     }).toList
 
-    new SimulatedTripPositions(pos)
+    val posBounded = List(
+      List(SimulatedPosition(fromTS, fromLat, fromLng, tripId, agencyId, routeShortName, SimulatedPositionStatus.START, Some(StopId(fromStop)))),
+      pos,
+      List(SimulatedPosition(toTS, toLat, toLng, tripId, agencyId, routeShortName, SimulatedPositionStatus.END, Some(StopId(toStop))))
+    ).flatten
+
+    new SimulatedTripPositions(posBounded)
   }
 
   it should "create mock SimulatedTripPositions" in {
-    val stp = toSimTrip("id1", "13:59:00", "14:09:00", 10, 11, -5, -6)
-    stp.size should be(11)
-    stp.positions(2).lat should be(10.2)
-    stp.positions(2).lng should be(-5.2)
-    math.floor(stp.positions(2).secondsOfDay / 60).toInt % 60 should be(1)
+    val stp = toSimTrip("id1", "13:59:00", "14:09:00", "stA", "stB", 10, 11, -5, -6)
+    stp.size should be(13)
+    stp.positions(3).lat should be(10.2)
+    stp.positions(3).lng should be(-5.2)
+    math.floor(stp.positions(3).secondsOfDay / 60).toInt % 60 should be(1)
   }
 
   def checkDateAreOrdered(stp: SimulatedTripPositions) = {
@@ -86,59 +97,59 @@ class SimulatedTripPositionsSpecs extends FlatSpec with Matchers {
   }
 
   it should "merge to STP should keep time ordered - no duplicate time" in {
-    val stp1 = toSimTrip("id1", "13:59:00", "14:09:00", 10, 11, -5, -6)
-    val stp2 = toSimTrip("id2", "14:00:30", "14:05:30", 10, 11, -5, -6)
+    val stp1 = toSimTrip("id1", "13:59:00", "14:09:00", "stA", "stB", 10, 11, -5, -6)
+    val stp2 = toSimTrip("id2", "14:00:30", "14:05:30", "stA", "stB", 10, 11, -5, -6)
 
     val stp = stp1 ++ stp2
-    stp.size should be(17)
+    stp.size should be(21)
     checkDateAreOrdered(stp)
 
-    stp.positions.map(st => math.floor(st.secondsOfDay / 60).toInt % 60) should equal(List(59, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7, 8, 9))
-    stp.positions.map(_.secondsOfDay % 60) should equal(List(0, 0, 30, 0, 30, 0, 30, 0, 30, 0, 30, 0, 30, 0, 0, 0, 0))
+    stp.positions.map(st => math.floor(st.secondsOfDay / 60).toInt % 60) should equal(List(59, 59, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 5, 6, 7, 8, 9, 9))
+    stp.positions.map(_.secondsOfDay % 60) should equal(List(0, 0, 0, 30, 30, 0, 30, 0, 30, 0, 30, 0, 30, 0, 30, 30, 0, 0, 0, 0, 0))
   }
 
   it should "merge to STP 2 starts after first last" in {
-    val stp1 = toSimTrip("id1", "13:59:00", "14:09:00", 10, 11, -5, -6)
-    val stp2 = toSimTrip("id2", "15:00:30", "15:05:30", 10, 11, -5, -6)
+    val stp1 = toSimTrip("id1", "13:59:00", "14:09:00", "stA", "stB", 10, 11, -5, -6)
+    val stp2 = toSimTrip("id2", "15:00:30", "15:05:30", "stA", "stB", 10, 11, -5, -6)
 
     val stp = stp1 ++ stp2
-    stp.size should be(17)
+    stp.size should be(21)
     checkDateAreOrdered(stp)
 
   }
 
   it should "merge to STP 1 starts after second last" in {
-    val stp1 = toSimTrip("id1", "13:59:00", "14:09:00", 10, 11, -5, -6)
-    val stp2 = toSimTrip("id2", "15:00:30", "15:05:30", 10, 11, -5, -6)
+    val stp1 = toSimTrip("id1", "13:59:00", "14:09:00", "stA", "stB", 10, 11, -5, -6)
+    val stp2 = toSimTrip("id2", "15:00:30", "15:05:30", "stA", "stB", 10, 11, -5, -6)
 
     val stp = stp2 ++ stp1
-    stp.size should be(17)
+    stp.size should be(21)
     checkDateAreOrdered(stp)
 
   }
   it should "merge to STP should keep time ordered - no duplicate time - reverse" in {
-    val stp1 = toSimTrip("id1", "13:59:00", "14:09:00", 10, 11, -5, -6)
-    val stp2 = toSimTrip("id2", "14:00:30", "14:05:30", 10, 11, -5, -6)
+    val stp1 = toSimTrip("id1", "13:59:00", "14:09:00", "stA", "stB", 10, 11, -5, -6)
+    val stp2 = toSimTrip("id2", "14:00:30", "14:05:30", "stA", "stB", 10, 11, -5, -6)
 
     val stp = stp2 ++ stp1
-    stp.size should be(17)
+    stp.size should be(21)
     checkDateAreOrdered(stp)
   }
 
   it should "merge to STP should keep time ordered - identic STP" in {
-    val stp1 = toSimTrip("id1", "13:59:00", "14:09:00", 10, 11, -5, -6)
+    val stp1 = toSimTrip("id1", "13:59:00", "14:09:00", "stA", "stB", 10, 11, -5, -6)
     val stp = stp1 ++ stp1
-    stp.size should be(22)
+    stp.size should be(26)
     checkDateAreOrdered(stp)
   }
 
   it should "merge a list of STP - 3" in {
-    val stp1 = toSimTrip("id1", "13:59:00", "14:09:00", 10, 11, -5, -6)
-    val stp2 = toSimTrip("id2", "14:00:30", "14:05:30", 10, 11, -5, -6)
-    val stp3 = toSimTrip("id3", "14:03:00", "14:07:00", 10, 11, -5, -6)
+    val stp1 = toSimTrip("id1", "13:59:00", "14:09:00", "stA", "stB", 10, 11, -5, -6)
+    val stp2 = toSimTrip("id2", "14:00:30", "14:05:30", "stA", "stB", 10, 11, -5, -6)
+    val stp3 = toSimTrip("id3", "14:03:00", "14:07:00", "stA", "stB", 10, 11, -5, -6)
 
     val stp = SimulatedTripPositions.merge(Seq(stp1, stp2, stp3))
-    stp.size should be(22)
+    stp.size should be(28)
     checkDateAreOrdered(stp)
   }
 }

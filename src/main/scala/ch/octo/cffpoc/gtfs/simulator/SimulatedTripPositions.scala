@@ -63,6 +63,7 @@ object SimulatedTripPositions {
       trip.tripId,
       trip.route.agencyId,
       trip.route.routeShortName,
+      SimulatedPositionStatus.MOVING,
       Some(st.stop.stopId)
     )
     )
@@ -94,6 +95,7 @@ object SimulatedTripPositions {
           trip.tripId,
           trip.route.agencyId,
           trip.route.routeShortName,
+          SimulatedPositionStatus.MOVING,
           None
         )
         incrementPosHandler(acc :+ newPos, newPos, targetPosition, deltaSeconds)
@@ -102,12 +104,14 @@ object SimulatedTripPositions {
 
     val posTurn = trip.stopTimes.flatMap(st => List(
       SimulatedPosition(st.timeArrival.getSecondOfDay, st.stop.lat, st.stop.lng, trip.tripId, trip.route.agencyId,
-        trip.route.routeShortName, Some(st.stop.stopId)),
+        trip.route.routeShortName, SimulatedPositionStatus.MOVING, Some(st.stop.stopId)),
       SimulatedPosition(st.timeDeparture.getSecondOfDay, st.stop.lat, st.stop.lng, trip.tripId, trip.route.agencyId,
-        trip.route.routeShortName, Some(st.stop.stopId))
+        trip.route.routeShortName, SimulatedPositionStatus.MOVING, Some(st.stop.stopId))
     ))
 
     val headStop = trip.stopTimes.head
+    val lastStop = trip.stopTimes.last
+
     val timedPositions = posTurn
       .take(posTurn.size).zip(posTurn.tail)
       .flatMap({
@@ -115,14 +119,26 @@ object SimulatedTripPositions {
           incrementPosHandler(Nil, st1, st2, deltaSeconds)
         }
       })
-    val timedPostionPlusStart = timedPositions.+:(SimulatedPosition(headStop.timeArrival.getSecondOfDay,
-      headStop.stop.lat,
-      headStop.stop.lng,
-      trip.tripId,
-      trip.route.agencyId,
-      trip.route.routeShortName,
-      Some(headStop.stop.stopId)
-    ))
+    val timedPostionPlusStart: List[SimulatedPosition] = List(
+      List(SimulatedPosition(headStop.timeArrival.getSecondOfDay,
+        headStop.stop.lat,
+        headStop.stop.lng,
+        trip.tripId,
+        trip.route.agencyId,
+        trip.route.routeShortName,
+        SimulatedPositionStatus.START,
+        Some(headStop.stop.stopId)
+      )),
+      timedPositions,
+      List(SimulatedPosition(lastStop.timeArrival.getSecondOfDay,
+        lastStop.stop.lat,
+        lastStop.stop.lng,
+        trip.tripId,
+        trip.route.agencyId,
+        trip.route.routeShortName,
+        SimulatedPositionStatus.END,
+        Some(lastStop.stop.stopId)
+      ))).flatten
 
     val simPositions: List[SimulatedPosition] =
       timedPostionPlusStart
