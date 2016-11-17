@@ -2,7 +2,7 @@ package ch.octo.cffpoc.gtfs.simulator.actors
 
 import akka.actor.{ Actor, ActorLogging, ActorRef }
 import ch.octo.cffpoc.gtfs.Trip
-import ch.octo.cffpoc.gtfs.simulator.actors.SimulatorMessages.{ EndOfTripSimulation, StartSimultationSchedule }
+import ch.octo.cffpoc.gtfs.simulator.actors.SimulatorMessages.{ EndOfTripSimulation, StartSimultationSchedule, StopSimulation }
 import ch.octo.cffpoc.gtfs.simulator.{ SimulatedTripPositions, TimeAccelerator }
 import org.joda.time.LocalDate
 
@@ -22,7 +22,7 @@ class ActorDelayedSimulatedTrip(actorSink: ActorRef,
   val scheduler = context.system.scheduler
 
   //delay its autostart
-  scheduler.scheduleOnce(timeAccelerator.inMS(trip.startsAt.getSecondOfDay) milliseconds, self, StartSimultationSchedule)
+  val scheduled = scheduler.scheduleOnce(timeAccelerator.inMS(trip.startsAt.getSecondOfDay) milliseconds, self, StartSimultationSchedule)
 
   override def receive: Receive = {
     case StartSimultationSchedule =>
@@ -32,6 +32,9 @@ class ActorDelayedSimulatedTrip(actorSink: ActorRef,
         scheduler.scheduleOnce(in milliseconds, actorSink, sp)
       })
     case EndOfTripSimulation =>
+      context.stop(self)
+    case StopSimulation =>
+      scheduled.cancel()
       context.stop(self)
   }
 }

@@ -9,7 +9,7 @@ enablePlugins(JavaAppPackaging)
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
 
-name := """cff-poc-streaming-backend"""
+name := """gtfs-simulation-play"""
 organization := "ch.octo"
 version := "0.1.2"
 scalaVersion := Version.scala

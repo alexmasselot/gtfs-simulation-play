@@ -3,6 +3,7 @@ package ch.octo.cffpoc.gtfs.simulator.actors
 import akka.actor.{ Actor, ActorLogging, ActorRef, Props }
 import ch.octo.cffpoc.gtfs.TripCollection
 import ch.octo.cffpoc.gtfs.simulator.TimeAccelerator
+import ch.octo.cffpoc.gtfs.simulator.actors.SimulatorMessages.StopSimulation
 import org.joda.time.LocalDate
 
 import scala.concurrent.ExecutionContext
@@ -17,10 +18,14 @@ class ActorSimulatedTrips(actorSink: ActorRef,
     averagSecondIncrement: Double)(implicit ec: ExecutionContext) extends Actor with ActorLogging {
   val scheduler = context.system.scheduler
 
-  trips.toList.foreach({ trip =>
-    val actTrip = context.actorOf(Props(new ActorDelayedSimulatedTrip(actorSink, timeAccelerator, trip, date, averagSecondIncrement)), name = s"simulated-trip-${trip.tripId.value}")
+  val actorsTrip: List[ActorRef] = trips.toList.map({ trip =>
+    context.actorOf(Props(new ActorDelayedSimulatedTrip(actorSink, timeAccelerator, trip, date, averagSecondIncrement)), name = s"simulated-trip-${trip.tripId.value}")
   })
+
   override def receive: Receive = {
-    case x => log.info(s"ActorSimulatedTrips received $x")
+    case StopSimulation =>
+      actorsTrip.foreach(a => a ! StopSimulation)
+      context stop self
+
   }
 }
