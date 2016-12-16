@@ -14,7 +14,7 @@ class RawStopTimeReaderSpecs extends FlatSpec with Matchers {
   }
 
   it should "size" in {
-    load.size should equal(47)
+    load.size should equal(95)
   }
 
 }

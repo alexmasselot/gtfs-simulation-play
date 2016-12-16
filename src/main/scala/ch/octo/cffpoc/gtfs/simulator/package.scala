@@ -1,5 +1,6 @@
 package ch.octo.cffpoc.gtfs
 
+import ch.octo.cffpoc.gtfs.RouteType.RouteType
 import org.joda.time.DateTime
 
 /**
@@ -17,6 +18,8 @@ package object simulator {
       tripId: TripId,
       agencyId: AgencyId,
       routeShortName: RouteShortName,
+      routeLongName: RouteLongName,
+      routeType: RouteType,
       status: SimulatedPositionStatus.Value,
       stopId: Option[StopId]) {
     override def toString: String = f"${secondsOfDay / 3600}%02d:${(secondsOfDay / 60) % 60}%02d:${secondsOfDay % 60}%02d\t$lat%2.2f\t$lng%2.2f\t${routeShortName.value}\t$status\t${tripId.value}"

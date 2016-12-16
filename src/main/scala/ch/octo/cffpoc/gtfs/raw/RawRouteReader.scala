@@ -14,7 +14,8 @@ object RawRouteReader extends RawDataCollectionReader[RawRoute] {
         RouteId(line(h2i("route_id"))),
         AgencyId(line(h2i("agency_id"))),
         RouteShortName(line(h2i("route_short_name"))),
-        RouteLongName(line(h2i("route_long_name")))
+        RouteLongName(line(h2i("route_long_name"))),
+        RouteType(line(h2i("route_type")).toInt)
       )
   }
 }

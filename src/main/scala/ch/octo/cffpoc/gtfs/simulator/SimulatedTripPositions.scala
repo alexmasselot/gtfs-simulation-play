@@ -40,6 +40,7 @@ class SimulatedTripPositions(val positions: List[SimulatedPosition] = Nil) {
         case (x1s, x2 :: x2s) => fHandler(acc :+ x2, x1s, x2s)
       }
     }
+
     new SimulatedTripPositions(fHandler(Nil, positions, other.positions))
   }
 
@@ -63,6 +64,8 @@ object SimulatedTripPositions {
       trip.tripId,
       trip.route.agencyId,
       trip.route.routeShortName,
+      trip.route.routeLongName,
+      trip.route.routeType,
       SimulatedPositionStatus.MOVING,
       Some(st.stop.stopId)
     )
@@ -95,6 +98,8 @@ object SimulatedTripPositions {
           trip.tripId,
           trip.route.agencyId,
           trip.route.routeShortName,
+          trip.route.routeLongName,
+          trip.route.routeType,
           SimulatedPositionStatus.MOVING,
           None
         )
@@ -104,9 +109,9 @@ object SimulatedTripPositions {
 
     val posTurn = trip.stopTimes.flatMap(st => List(
       SimulatedPosition(st.timeArrival.getSecondOfDay, st.stop.lat, st.stop.lng, trip.tripId, trip.route.agencyId,
-        trip.route.routeShortName, SimulatedPositionStatus.MOVING, Some(st.stop.stopId)),
+        trip.route.routeShortName, trip.route.routeLongName, trip.route.routeType, SimulatedPositionStatus.MOVING, Some(st.stop.stopId)),
       SimulatedPosition(st.timeDeparture.getSecondOfDay, st.stop.lat, st.stop.lng, trip.tripId, trip.route.agencyId,
-        trip.route.routeShortName, SimulatedPositionStatus.MOVING, Some(st.stop.stopId))
+        trip.route.routeShortName, trip.route.routeLongName, trip.route.routeType, SimulatedPositionStatus.MOVING, Some(st.stop.stopId))
     ))
 
     val headStop = trip.stopTimes.head
@@ -126,6 +131,8 @@ object SimulatedTripPositions {
         trip.tripId,
         trip.route.agencyId,
         trip.route.routeShortName,
+        trip.route.routeLongName,
+        trip.route.routeType,
         SimulatedPositionStatus.START,
         Some(headStop.stop.stopId)
       )),
@@ -136,6 +143,8 @@ object SimulatedTripPositions {
         trip.tripId,
         trip.route.agencyId,
         trip.route.routeShortName,
+        trip.route.routeLongName,
+        trip.route.routeType,
         SimulatedPositionStatus.END,
         Some(lastStop.stop.stopId)
       ))).flatten

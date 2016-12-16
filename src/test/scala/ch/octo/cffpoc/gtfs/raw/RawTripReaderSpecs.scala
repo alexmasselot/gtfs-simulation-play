@@ -15,7 +15,7 @@ class RawTripReaderSpecs extends FlatSpec with Matchers {
   }
 
   it should "size" in {
-    load.size should equal(4)
+    load.size should equal(8)
   }
 
   it should "get Some" in {

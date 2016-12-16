@@ -12,7 +12,7 @@ import ch.octo.cffpoc.gtfs.raw.RawCalendarDateReader
 import ch.octo.cffpoc.gtfs.simulator._
 import ch.octo.cffpoc.gtfs.simulator.actors.ActorSimulatedTrips
 import ch.octo.cffpoc.gtfs.simulator.actors.SimulatorMessages.StopSimulation
-import ch.octo.cffpoc.gtfs.{ AgencyId, GTFSSystem, RouteShortName, TripId }
+import ch.octo.cffpoc.gtfs._
 import org.slf4j.LoggerFactory
 import play.api.Configuration
 import play.api.http.ContentTypes
@@ -31,8 +31,8 @@ class SimulatorController @Inject() (configuration: Configuration)(implicit acto
     ec: ExecutionContext) extends Controller {
   val logger = LoggerFactory.getLogger("SimulatorController")
 
-  val path = "src/main/resources/gtfs_gondola"
-  lazy val gtfsSystem = GTFSSystem.load(path)
+  val path = "src/main/resources/gtfs_complete"
+  lazy val gtfsSystem = GTFSSystem.load(path, { (rr: RawRoute) => (rr.routeType != RouteType.BUS) || rr.agencyId == AgencyId("000801") })
   val date = RawCalendarDateReader.dateFromString("20161005")
   lazy val trips = gtfsSystem.findAllTripsByDate(date)
 
@@ -59,8 +59,8 @@ class SimulatorController @Inject() (configuration: Configuration)(implicit acto
 
     futureQueue.map { queue =>
       val actorForward = actorSystem.actorOf(Props(new ActorForward(queue)))
-      val ta = TimeAccelerator(System.currentTimeMillis(), 100, 1000)
-      val actorSimulatedTrips = actorSystem.actorOf(Props(new ActorSimulatedTrips(actorForward, ta, trips, date, 20)))
+      val ta = TimeAccelerator(System.currentTimeMillis(), 6 * 3600, 50)
+      val actorSimulatedTrips = actorSystem.actorOf(Props(new ActorSimulatedTrips(actorForward, ta, trips, date, 60)))
 
       queue.watchCompletion().map { done =>
         println("Client disconnected")
@@ -71,8 +71,6 @@ class SimulatorController @Inject() (configuration: Configuration)(implicit acto
     }
 
     Ok.chunked(queueSource via EventSource.flow)
-
     // ref ! SimulatedPosition(3, 10.0, 20.0, TripId("tripid"), AgencyId("agencyId"), RouteShortName("rt"), SimulatedPositionStatus.MOVING, None)
-
   }
 }

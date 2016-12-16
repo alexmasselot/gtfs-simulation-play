@@ -15,6 +15,15 @@ import org.joda.time.{ LocalDate }
  */
 package object gtfs {
 
+  /**
+   * get routes type. The order is important, dependending on the specs
+   * https://developers.google.com/transit/gtfs/reference/routes-file
+   */
+  object RouteType extends Enumeration {
+    type RouteType = Value
+    val TRAM, SUBWAY, RAIL, BUS, FERRY, CABLE_CAR, GONDOLA, FUNICULAR = Value
+  }
+
   case class ServiceId(value: String)
 
   case class RouteId(value: String)
@@ -37,6 +46,8 @@ package object gtfs {
 
   case class RawCalendarDate(serviceId: ServiceId, date: LocalDate)
 
+  case class RawCalendar(dateStart: LocalDate, dateEnd: LocalDate)
+
   case class RawTrip(routeId: RouteId, serviceId: ServiceId, tripId: TripId, tripHeadSign: StopName, tripShortName: TripShortName)
 
   case class RawStop(stopId: StopId, stopName: StopName, lat: Double, lng: Double)
@@ -45,7 +56,7 @@ package object gtfs {
 
   case class RawAgency(agencyId: AgencyId, agencyName: AgencyName)
 
-  case class RawRoute(routeId: RouteId, agencyId: AgencyId, routeShortName: RouteShortName, routeLongName: RouteLongName)
+  case class RawRoute(routeId: RouteId, agencyId: AgencyId, routeShortName: RouteShortName, routeLongName: RouteLongName, routeType: RouteType.RouteType)
 
   case class StopTime(stop: RawStop, tripId: TripId, timeArrival: ScheduleTime, timeDeparture: ScheduleTime)
 

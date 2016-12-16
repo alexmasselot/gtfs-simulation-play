@@ -39,6 +39,9 @@ object Serializers {
   implicit object writeRouteShortName extends Writes[RouteShortName] {
     override def writes(o: RouteShortName): JsValue = JsString(o.value)
   }
+  implicit object writeRouteLongName extends Writes[RouteLongName] {
+    override def writes(o: RouteLongName): JsValue = JsString(o.value)
+  }
   implicit val writeSimulatedPosition = Json.writes[SimulatedPosition]
 
   implicit object formatHasTimedPosition extends Writes[HasTimedPosition] {

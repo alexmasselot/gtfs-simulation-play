@@ -15,7 +15,7 @@ class RawCalendarDateReaderSpecs extends FlatSpec with Matchers {
   }
 
   it should "size" in {
-    load.size should equal(107)
+    load.size should equal(479)
   }
 
   it should "parseDate" in {

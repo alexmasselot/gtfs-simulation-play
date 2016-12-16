@@ -7,15 +7,15 @@ import org.joda.time.LocalDate
 /**
  * Created by alex on 03/05/16.
  */
-class GTFSSystem(val trips: TripCollection, val stops: Map[StopId, RawStop], val agencies: Map[AgencyId, RawAgency], exceptionDates: Map[LocalDate, Set[ServiceId]]) {
+class GTFSSystem(val trips: TripCollection,
+    val stops: Map[StopId, RawStop],
+    val agencies: Map[AgencyId, RawAgency],
+    exceptionDater: ExceptionDater) {
 
   def countTrips = trips.size
 
   def findAllTripsByDate(date: LocalDate): TripCollection = {
-    exceptionDates.get(date) match {
-      case None => trips
-      case Some(skipDates) => trips.filter(t => !skipDates.contains(t.serviceId))
-    }
+    trips.filter(t => exceptionDater.isRunning(t.serviceId, date))
   }
 }
 
@@ -30,23 +30,41 @@ object GTFSSystem {
   val FILENAME_STOP_TIMES = "stop_times.txt"
   val FILENAME_TRIPS = "trips.txt"
   val FILENAME_CALENDAR_DATES = "calendar_dates.txt"
+  val FILENAME_CALENDAR = "calendar.txt"
 
-  def loadAgencies(rootSrc: String): Map[AgencyId, RawAgency] =
-    indexIt(
+  def loadAgencies(rootSrc: String): Map[AgencyId, RawAgency] = {
+    LOGGER.info(s"loading $rootSrc/$FILENAME_AGENCY")
+    val m = indexIt(
       RawAgencyReader.load(s"$rootSrc/$FILENAME_AGENCY"), { (a: RawAgency) => a.agencyId }, { (a: RawAgency) => a }
-
     )
+    LOGGER.info(s"loaded ${m.size} agencies")
+    m
+  }
 
-  def loadStops(rootSrc: String): Map[StopId, RawStop] =
-    indexIt(
+  def loadStops(rootSrc: String): Map[StopId, RawStop] = {
+    LOGGER.info(s"loading $rootSrc/$FILENAME_STOPS")
+    val m = indexIt(
       RawStopReader.load(s"$rootSrc/$FILENAME_STOPS"), { (a: RawStop) => a.stopId }, { (a: RawStop) => a }
-
     )
+    LOGGER.info(s"loaded ${m.size} stops")
+    m
+  }
 
-  def loadRoutes(rootSrc: String): Map[RouteId, RawRoute] =
-    indexIt(
-      RawRouteReader.load(s"$rootSrc/$FILENAME_ROUTES"), { (a: RawRoute) => a.routeId }, { (a: RawRoute) => a }
+  def loadRoutes(rootSrc: String,
+    oFilter: Option[(RawRoute) => Boolean] = None): Map[RouteId, RawRoute] = {
+    val fname = s"$rootSrc/$FILENAME_ROUTES"
+    LOGGER.info(s"loading $fname")
+    val itRoutes = oFilter match {
+      case None => RawRouteReader.load(fname)
+      case Some(filter) => RawRouteReader.load(fname).filter(filter)
+    }
+
+    val m = indexIt(
+      itRoutes, { (a: RawRoute) => a.routeId }, { (a: RawRoute) => a }
     )
+    LOGGER.info(s"loaded ${m.size} routes")
+    m
+  }
 
   /**
    * group by date and point to s set of serviceId
@@ -54,11 +72,12 @@ object GTFSSystem {
    * @param rootSrc
    * @return
    */
-  def loadExceptionDates(rootSrc: String): Map[LocalDate, Set[ServiceId]] = {
-    RawCalendarDateReader.load(s"$rootSrc/$FILENAME_CALENDAR_DATES")
-      .toList
-      .groupBy(_.date)
-      .map({ case (date, l) => date -> l.map(_.serviceId).toSet })
+  private def loadExceptionDater(rootSrc: String, includeServiceIds: Set[ServiceId]): ExceptionDater = {
+    LOGGER.info(s"loading $rootSrc/$FILENAME_CALENDAR_DATES")
+    LOGGER.info(s"loading $rootSrc/$FILENAME_CALENDAR")
+    val itCalendarDates = RawCalendarDateReader.load(s"$rootSrc/$FILENAME_CALENDAR_DATES")
+    val calendar = RawCalendarReader.load(s"$rootSrc/$FILENAME_CALENDAR").next()
+    ExceptionDater.load(calendar, itCalendarDates.filter(rcd => includeServiceIds.contains(rcd.serviceId)))
   }
 
   /**
@@ -68,8 +87,12 @@ object GTFSSystem {
    * @param stops   a map stopId => Stop
    * @return
    */
-  def loadStopTimesByTripId(rootSrc: String, stops: Map[StopId, RawStop]): Map[TripId, List[StopTime]] = {
+  private def loadStopTimesByTripId(rootSrc: String,
+    stops: Map[StopId, RawStop],
+    tripIds: Set[TripId]): Map[TripId, List[StopTime]] = {
+    LOGGER.info(s"loading $rootSrc/$FILENAME_STOP_TIMES")
     RawStopTimeReader.load(s"$rootSrc/$FILENAME_STOP_TIMES")
+      .filter(rst => tripIds.contains(rst.tripId))
       .map(rst => StopTime(stops(rst.stopId), rst.tripId, rst.timeArrival, rst.timeDeparture))
       .toList
       .groupBy(_.tripId)
@@ -87,8 +110,10 @@ object GTFSSystem {
   def loadTrips(rootSrc: String,
     stopTimesByTripId: Map[TripId, List[StopTime]],
     routes: Map[RouteId, RawRoute]): TripCollection = {
-
-    TripCollection(RawTripReader.load(s"$rootSrc/$FILENAME_TRIPS")
+    LOGGER.info(s"loading $rootSrc/$FILENAME_TRIPS")
+    val tc = TripCollection(RawTripReader
+      .load(s"$rootSrc/$FILENAME_TRIPS")
+      .filter(t => routes.contains(t.routeId))
       .zipWithIndex
       .map({
         case (rt, i) =>
@@ -99,6 +124,25 @@ object GTFSSystem {
       })
       .toMap
     )
+    LOGGER.info(s"loaded ${tc.size} trips")
+    tc
+  }
+
+  /**
+   * load trip and associate them with the routes, serviceId and the list of StopTime
+   *
+   * @param rootSrc
+   * @param routes
+   * @return a map tripId->Trip
+   */
+  private def loadTripIdsForRoutes(rootSrc: String,
+    routes: Map[RouteId, RawRoute]): Set[TripId] = {
+    LOGGER.info(s"loadTripIdsForRoutes $rootSrc/$FILENAME_TRIPS")
+    RawTripReader
+      .load(s"$rootSrc/$FILENAME_TRIPS")
+      .filter(t => routes.contains(t.routeId))
+      .map(_.tripId)
+      .toSet
   }
 
   /**
@@ -108,29 +152,45 @@ object GTFSSystem {
    * @param rootSrc
    * @return
    */
-  def load(rootSrc: String): GTFSSystem = {
-    LOGGER.info(s"loading $rootSrc/$FILENAME_CALENDAR_DATES")
-    val exceptionDates = loadExceptionDates(rootSrc)
-    LOGGER.info(s"loading $rootSrc/$FILENAME_STOPS")
+  private def p_load(rootSrc: String,
+    filterRoute: Option[(RawRoute) => Boolean]): GTFSSystem = {
+
+    val routes = loadRoutes(rootSrc, filterRoute)
     val stops = loadStops(rootSrc)
-    LOGGER.info(s"loading $rootSrc/$FILENAME_AGENCY")
     val agencies = loadAgencies(rootSrc)
-    LOGGER.info(s"loading $rootSrc/$FILENAME_STOP_TIMES")
-    val stopTimesByTripId = loadStopTimesByTripId(rootSrc, stops)
-    LOGGER.info(s"loading $rootSrc/$FILENAME_ROUTES")
-    val routes = loadRoutes(rootSrc)
-    LOGGER.info(s"loading $rootSrc/$FILENAME_TRIPS")
+    val tripIds = loadTripIdsForRoutes(rootSrc, routes = routes)
+    val stopTimesByTripId = loadStopTimesByTripId(rootSrc, stops, tripIds)
     val trips = loadTrips(rootSrc, stopTimesByTripId = stopTimesByTripId, routes = routes)
+    val exceptionDater = loadExceptionDater(rootSrc, trips.toList.map(_.serviceId).toSet)
     LOGGER.info("finished loading")
-    new GTFSSystem(trips, stops, agencies = agencies, exceptionDates = exceptionDates)
+    new GTFSSystem(trips, stops, agencies = agencies, exceptionDater = exceptionDater)
   }
+
+  /**
+   * Load the whole system, with a condition on routes
+   *
+   * @param rootSrc
+   * @param filterRoute filter funciton based on the route (routetype, longname...)
+   * @return
+   */
+  def load(rootSrc: String,
+    filterRoute: (RawRoute) => Boolean): GTFSSystem =
+    p_load(rootSrc, Some(filterRoute))
+
+  /**
+   * Load the whole system.
+   *
+   * @param rootSrc
+   * @return
+   */
+  def load(rootSrc: String): GTFSSystem = p_load(rootSrc, None)
 
   /**
    * take a list of objects and build a map based on the function fIndex towards a value computed by fValue
    *
-   * @param iterator   the original list
-   * @param fKey   how to get a key
-   * @param fValue how to get a value
+   * @param iterator the original list
+   * @param fKey     how to get a key
+   * @param fValue   how to get a value
    * @tparam TO Originla bean type
    * @tparam TK key type
    * @tparam TV value type

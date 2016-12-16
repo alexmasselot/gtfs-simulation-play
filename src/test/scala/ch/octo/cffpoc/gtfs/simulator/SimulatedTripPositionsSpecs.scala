@@ -11,7 +11,7 @@ import org.scalatest.{FlatSpec, Matchers}
 class SimulatedTripPositionsSpecs extends FlatSpec with Matchers {
   val trip1: Trip = Trip(
     TripId("trip1"),
-    RawRoute(RouteId("rt1"), AgencyId("agcy"), RouteShortName("rsn"), RouteLongName("route long name")),
+    RawRoute(RouteId("rt1"), AgencyId("agcy"), RouteShortName("rsn"), RouteLongName("route long name"), RouteType.GONDOLA),
 
     ServiceId("service1"),
     StopName("head stop1"),
@@ -51,8 +51,8 @@ class SimulatedTripPositionsSpecs extends FlatSpec with Matchers {
   def toSimTrip(id: String,
                 fromTime: String,
                 toTime: String,
-                fromStop:String,
-                toStop:String,
+                fromStop: String,
+                toStop: String,
                 fromLat: Double,
                 toLat: Double,
                 fromLng: Double,
@@ -61,7 +61,8 @@ class SimulatedTripPositionsSpecs extends FlatSpec with Matchers {
     val tripId = TripId(id)
     val agencyId = AgencyId("agcy")
     val routeShortName = RouteShortName("rsn")
-
+    val routeLongName = RouteLongName("rsn1234")
+    val routeType = RouteType.GONDOLA
 
     val fromTS: Int = ScheduleTime(fromTime).getSecondOfDay
     val toTS: Int = ScheduleTime(toTime).getSecondOfDay
@@ -69,14 +70,15 @@ class SimulatedTripPositionsSpecs extends FlatSpec with Matchers {
     def interpolate(t: Long, x0: Double, x1: Double): Double = {
       x0 + (t - fromTS).toDouble / (toTS - fromTS) * (x1 - x0)
     }
+
     val pos = (fromTS to toTS by 60).map({ t =>
-      SimulatedPosition(t, interpolate(t, fromLat, toLat), interpolate(t, fromLng, toLng), tripId, agencyId, routeShortName, SimulatedPositionStatus.MOVING, None)
+      SimulatedPosition(t, interpolate(t, fromLat, toLat), interpolate(t, fromLng, toLng), tripId, agencyId, routeShortName, routeLongName, routeType, SimulatedPositionStatus.MOVING, None)
     }).toList
 
     val posBounded = List(
-      List(SimulatedPosition(fromTS, fromLat, fromLng, tripId, agencyId, routeShortName, SimulatedPositionStatus.START, Some(StopId(fromStop)))),
+      List(SimulatedPosition(fromTS, fromLat, fromLng, tripId, agencyId, routeShortName, routeLongName, routeType, SimulatedPositionStatus.START, Some(StopId(fromStop)))),
       pos,
-      List(SimulatedPosition(toTS, toLat, toLng, tripId, agencyId, routeShortName, SimulatedPositionStatus.END, Some(StopId(toStop))))
+      List(SimulatedPosition(toTS, toLat, toLng, tripId, agencyId, routeShortName, routeLongName, routeType, SimulatedPositionStatus.END, Some(StopId(toStop))))
     ).flatten
 
     new SimulatedTripPositions(posBounded)
