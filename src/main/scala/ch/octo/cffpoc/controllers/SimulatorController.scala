@@ -32,7 +32,13 @@ class SimulatorController @Inject() (configuration: Configuration)(implicit acto
   val logger = LoggerFactory.getLogger("SimulatorController")
 
   val path = "src/main/resources/gtfs_complete"
-  lazy val gtfsSystem = GTFSSystem.load(path, { (rr: RawRoute) => (rr.routeType != RouteType.BUS) || rr.agencyId == AgencyId("000801") })
+  lazy val gtfsSystem = GTFSSystem.load(path
+  //    , {
+  //    (rr: RawRoute) =>
+  //      //rr.routeType == RouteType.RAIL
+  //      ((rr.routeType != RouteType.BUS) || rr.agencyId == AgencyId("000801")) && (rr.routeType != RouteType.TRAM)
+  //  }
+  )
   val date = RawCalendarDateReader.dateFromString("20161005")
   lazy val trips = gtfsSystem.findAllTripsByDate(date)
 
@@ -52,18 +58,42 @@ class SimulatorController @Inject() (configuration: Configuration)(implicit acto
     (s, p.future)
   }
 
-  def positions = Action {
+  def positionsBounded(minLat: Double, maxLat: Double, minLng: Double, maxLng: Double) = {
+    positions({
+      (trip: Trip) =>
+        trip.stopTimes.exists({
+          stopTime =>
+            val lat = stopTime.stop.lat
+            val lng = stopTime.stop.lng
+            !(
+              (lat < minLat)
+              || (lat > maxLat)
+              || (lng < minLng)
+              || (lng > maxLng)
+            )
+        })
+
+    })
+  }
+
+  def positionsAllNoCityTransport =
+    positions((trip: Trip) =>
+      ((trip.route.routeType != RouteType.BUS) || trip.route.agencyId == AgencyId("000801"))
+        && (trip.route.routeType != RouteType.TRAM)
+    )
+
+  def positions(filterTrips: ((Trip) => Boolean)) = Action {
     val logging = Logging(actorSystem.eventStream, logger.getName)
 
     val (queueSource, futureQueue) = peekMatValue(Source.queue[JsValue](100000, OverflowStrategy.fail))
 
     futureQueue.map { queue =>
       val actorForward = actorSystem.actorOf(Props(new ActorForward(queue)))
-      val ta = TimeAccelerator(System.currentTimeMillis(), 6 * 3600, 50)
-      val actorSimulatedTrips = actorSystem.actorOf(Props(new ActorSimulatedTrips(actorForward, ta, trips, date, 60)))
+      val ta = TimeAccelerator(System.currentTimeMillis(), 5 * 3600, 500)
+      val actualTrips = trips.filter(filterTrips)
+      val actorSimulatedTrips = actorSystem.actorOf(Props(new ActorSimulatedTrips(actorForward, ta, actualTrips, date, 500)))
 
       queue.watchCompletion().map { done =>
-        println("Client disconnected")
         actorForward ! PoisonPill
         actorSimulatedTrips ! StopSimulation
         println("Scheduler canceled")

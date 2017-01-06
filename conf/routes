@@ -1,4 +1,5 @@
-GET        /static-data/agency         ch.octo.cffpoc.controllers.StaticDataController.agencies
-GET        /static-data/stop           ch.octo.cffpoc.controllers.StaticDataController.stops
-GET        /test/tick                  ch.octo.cffpoc.controllers.TickController.tick
-GET        /simulator/positions        ch.octo.cffpoc.controllers.SimulatorController.positions
+GET        /static-data/agency                 ch.octo.cffpoc.controllers.StaticDataController.agencies
+GET        /static-data/stop                   ch.octo.cffpoc.controllers.StaticDataController.stops
+GET        /test/tick                          ch.octo.cffpoc.controllers.TickController.tick
+GET        /simulator/positions-ch             ch.octo.cffpoc.controllers.SimulatorController.positionsAllNoCityTransport
+GET        /simulator/positions-bounded        ch.octo.cffpoc.controllers.SimulatorController.positionsBounded(minLat:Double ?= 46.0, maxLat:Double?=47.0, minLng:Double ?= 6.0, maxLng:Double ?=8.0)
