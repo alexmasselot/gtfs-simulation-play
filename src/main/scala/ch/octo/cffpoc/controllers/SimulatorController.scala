@@ -58,40 +58,50 @@ class SimulatorController @Inject() (configuration: Configuration)(implicit acto
     (s, p.future)
   }
 
-  def positionsBounded(minLat: Double, maxLat: Double, minLng: Double, maxLng: Double) = {
-    positions({
-      (trip: Trip) =>
-        trip.stopTimes.exists({
-          stopTime =>
-            val lat = stopTime.stop.lat
-            val lng = stopTime.stop.lng
-            !(
-              (lat < minLat)
-              || (lat > maxLat)
-              || (lng < minLng)
-              || (lng > maxLng)
-            )
-        })
+  def positionsBounded(minLat: Double,
+    maxLat: Double,
+    minLng: Double,
+    maxLng: Double,
+    cityTransit: Boolean,
+    accelerationFactor: Double) = {
+    positions(accelerationFactor,
+      {
+        (trip: Trip) =>
+          val rawRoute = trip.route
+          val ctCond = cityTransit || (((rawRoute.routeType != RouteType.BUS) || rawRoute.agencyId == AgencyId("000801")) && (rawRoute.routeType != RouteType.TRAM))
+          ctCond && trip.stopTimes.exists({
+            stopTime =>
+              val lat = stopTime.stop.lat
+              val lng = stopTime.stop.lng
+              !(
+                (lat < minLat)
+                || (lat > maxLat)
+                || (lng < minLng)
+                || (lng > maxLng)
+              )
+          })
 
-    })
+      })
   }
 
   def positionsAllNoCityTransport =
-    positions((trip: Trip) =>
-      ((trip.route.routeType != RouteType.BUS) || trip.route.agencyId == AgencyId("000801"))
-        && (trip.route.routeType != RouteType.TRAM)
+    positions(500,
+      (trip: Trip) =>
+        ((trip.route.routeType != RouteType.BUS) || trip.route.agencyId == AgencyId("000801"))
+          && (trip.route.routeType != RouteType.TRAM)
     )
 
-  def positions(filterTrips: ((Trip) => Boolean)) = Action {
+  def positions(accelerationFactor: Double, filterTrips: ((Trip) => Boolean)) = Action {
     val logging = Logging(actorSystem.eventStream, logger.getName)
 
     val (queueSource, futureQueue) = peekMatValue(Source.queue[JsValue](100000, OverflowStrategy.fail))
 
     futureQueue.map { queue =>
       val actorForward = actorSystem.actorOf(Props(new ActorForward(queue)))
-      val ta = TimeAccelerator(System.currentTimeMillis(), 5 * 3600, 500)
+      val ta = TimeAccelerator(System.currentTimeMillis(), 5 * 3600, accelerationFactor)
       val actualTrips = trips.filter(filterTrips)
-      val actorSimulatedTrips = actorSystem.actorOf(Props(new ActorSimulatedTrips(actorForward, ta, actualTrips, date, 500)))
+      logger.info("launching scheduled trips")
+      val actorSimulatedTrips = actorSystem.actorOf(Props(new ActorSimulatedTrips(actorForward, ta, actualTrips, date, accelerationFactor)))
 
       queue.watchCompletion().map { done =>
         actorForward ! PoisonPill
