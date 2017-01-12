@@ -1,10 +1,5 @@
 package ch.octo.cffpoc.gtfs.raw
 
-import java.io.File
-
-import ch.octo.cffpoc.gtfs.{ RawCalendarDate, ServiceId }
-import com.github.tototoshi.csv.CSVReader
-
 import scala.io.Source
 
 /**
@@ -15,7 +10,6 @@ trait RawDataCollectionReader[T] {
   def builReadFunction(header: Array[String]): (Array[String]) => T
 
   def load(filename: String): Iterator[T] = {
-    val cvsreader = CSVReader.open(new File(filename))
     val itLines = Source.fromFile(filename)
       .getLines()
     val header = RawDataCollectionReader.splitLine(itLines.next())
