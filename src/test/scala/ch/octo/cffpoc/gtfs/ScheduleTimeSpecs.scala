@@ -4,8 +4,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import org.joda.time.chrono.ISOChronology
-import org.joda.time.{DateTime, DateTimeZone, LocalDate}
-import org.scalatest.{FlatSpec, Matchers}
+import org.joda.time.{ DateTime, DateTimeZone, LocalDate }
+import org.scalatest.{ FlatSpec, Matchers }
 
 /**
  * Created by alex on 17/02/16.
@@ -42,6 +42,6 @@ class ScheduleTimeSpecs extends FlatSpec with Matchers {
 
   it should "toDateTime during the day" in {
 
-    ScheduleTime("22:15:07").toDateTime(new LocalDate(2016,3,1)) should be(DateTime.parse("2016-03-01T22:15:07.000"))
+    ScheduleTime("22:15:07").toDateTime(new LocalDate(2016, 3, 1)) should be(DateTime.parse("2016-03-01T22:15:07.000"))
   }
 }

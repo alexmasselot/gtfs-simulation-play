@@ -1,6 +1,6 @@
 package ch.octo.cffpoc.gtfs.raw
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{ FlatSpec, Matchers }
 
 /**
  * Created by alex on 17/02/16.

@@ -1,11 +1,11 @@
 package ch.octo.cffpoc.gtfs
 
-import ch.octo.cffpoc.gtfs.raw.{RawCalendarDateReader, RawCalendarReader}
-import org.scalatest.{FlatSpec, Matchers}
+import ch.octo.cffpoc.gtfs.raw.{ RawCalendarDateReader, RawCalendarReader }
+import org.scalatest.{ FlatSpec, Matchers }
 
 /**
-  * Created by alex on 17/02/16.
-  */
+ * Created by alex on 17/02/16.
+ */
 class ExceptionDaterSpecs extends FlatSpec with Matchers {
   behavior of "ExceptionDater"
 
@@ -33,7 +33,7 @@ class ExceptionDaterSpecs extends FlatSpec with Matchers {
 
   it should "countService" in {
     val ed = exceptionDater
-    ed.countServices shouldEqual(8)
+    ed.countServices shouldEqual (8)
   }
 
   it should "service be on" in {

@@ -1,28 +1,65 @@
 package ch.octo.cffpoc.gtfs.simulator
 
-import ch.octo.cffpoc.gtfs.{StopTime, _}
+import ch.octo.cffpoc.gtfs.{ StopTime, _ }
 import ch.octo.cffpoc.gtfs.raw.RawCalendarDateReader
 import org.joda.time.DateTime
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalactic.{ Equivalence, TolerantNumerics, TypeCheckedTripleEquals }
+import org.scalatest.{ FlatSpec, Matchers }
 
 /**
-  * Created by alex on 06.10.16.
-  */
+ * Created by alex on 06.10.16.
+ */
 class SimulatedTripPositionsSpecs extends FlatSpec with Matchers {
+
   val trip1: Trip = Trip(
     TripId("trip1"),
     RawRoute(RouteId("rt1"), AgencyId("agcy"), RouteShortName("rsn"), RouteLongName("route long name"), RouteType.GONDOLA),
-
     ServiceId("service1"),
     StopName("head stop1"),
     TripShortName("tsn1"),
     List(
       StopTime(RawStop(StopId("sid1-1"), StopName("stop1-1"), 45.0, 6.5), TripId("trip1"), ScheduleTime("13:59:00"), ScheduleTime("14:01:00")),
-      StopTime(RawStop(StopId("sid1-2"), StopName("stop1-2"), 45.3, 6.1), TripId("trip1"), ScheduleTime("14:11:00"), ScheduleTime("14:11:00")),
+      StopTime(RawStop(StopId("sid1-2"), StopName("stop1-2"), 45.3, 6.1), TripId("trip1"), ScheduleTime("14:10:00"), ScheduleTime("14:10:00")),
+      StopTime(RawStop(StopId("sid1-2"), StopName("stop1-2"), 45.3, 6.1), TripId("trip1"), ScheduleTime("14:20:00"), ScheduleTime("14:25:00")),
       StopTime(RawStop(StopId("sid1-1"), StopName("stop-11"), 44.3, 7.1), TripId("trip1"), ScheduleTime("14:31:00"), ScheduleTime("14:31:00"))
     )
   )
+  val trip2Stops: Trip = Trip(
+    TripId("trip2"),
+    RawRoute(RouteId("rt1"), AgencyId("agcy"), RouteShortName("rsn"), RouteLongName("route long name"), RouteType.GONDOLA),
+    ServiceId("service1"),
+    StopName("head stop1"),
+    TripShortName("tsn1"),
+    List(
+      StopTime(RawStop(StopId("sid2-1"), StopName("stop2-1"), 45.0, 6.5), TripId("trip2"), ScheduleTime("00:00:00"), ScheduleTime("00:10:00")),
+      StopTime(RawStop(StopId("sid2-2"), StopName("stop2-2"), 44.3, 7.1), TripId("trip2"), ScheduleTime("00:20:00"), ScheduleTime("00:20:00"))
+    )
+  )
+  val trip3StopsShortBreak: Trip = Trip(
+    TripId("trip3short"),
+    RawRoute(RouteId("rt1"), AgencyId("agcy"), RouteShortName("rsn"), RouteLongName("route long name"), RouteType.GONDOLA),
+    ServiceId("service1"),
+    StopName("head stop1"),
+    TripShortName("tsn1"),
+    List(
+      StopTime(RawStop(StopId("sid3s-1"), StopName("stop3s-1"), 45.0, 6.5), TripId("trip3s"), ScheduleTime("00:00:00"), ScheduleTime("00:10:00")),
+      StopTime(RawStop(StopId("sid3s-2"), StopName("stop3s-2"), 44.0, 7), TripId("trip3s"), ScheduleTime("00:13:00"), ScheduleTime("00:13:00")),
+      StopTime(RawStop(StopId("sid3s-3"), StopName("stop3s-3"), 43, 8), TripId("trip3s"), ScheduleTime("00:20:00"), ScheduleTime("00:20:00"))
+    )
+  )
 
+  val trip3StopsLongBreak: Trip = Trip(
+    TripId("trips3long"),
+    RawRoute(RouteId("rt1"), AgencyId("agcy"), RouteShortName("rsn"), RouteLongName("route long name"), RouteType.GONDOLA),
+    ServiceId("service1"),
+    StopName("head stop1"),
+    TripShortName("tsn1"),
+    List(
+      StopTime(RawStop(StopId("sid3l-1"), StopName("stop3l-1"), 45.0, 6.5), TripId("trip3l"), ScheduleTime("00:00:00"), ScheduleTime("00:10:00")),
+      StopTime(RawStop(StopId("sid3l-2"), StopName("stop3l-3"), 44.0, 7), TripId("trip3l"), ScheduleTime("00:13:00"), ScheduleTime("00:17:00")),
+      StopTime(RawStop(StopId("sid3l-3"), StopName("stop3l-3"), 43, 8), TripId("trip3l"), ScheduleTime("00:20:00"), ScheduleTime("00:20:00"))
+    )
+  )
   it should "crete empty SimulatedTripPositions" in {
     val simulatedTripPositions = new SimulatedTripPositions()
     simulatedTripPositions.size should be(0)
@@ -30,34 +67,71 @@ class SimulatedTripPositionsSpecs extends FlatSpec with Matchers {
 
   it should "three stops int SimulatedTripPositions" in {
     val simulatedTripPositions = SimulatedTripPositions(trip1, RawCalendarDateReader.dateFromString("20010116"))
-    simulatedTripPositions.size should be(3)
+    simulatedTripPositions.size should be(4)
     simulatedTripPositions.positions.last.lat should be(44.3)
   }
 
+  def extractSPData[M](stp: SimulatedTripPositions, f: (SimulatedPosition) => M): List[M] = {
+    stp.positions.map(f)
+  }
+
+  val stps2stops = SimulatedTripPositions(trip2Stops, RawCalendarDateReader.dateFromString("20010116"), 60)
+  it should "2 stops trips with 1 minutes interval - size " in {
+    stps2stops.size should be(11)
+  }
+  it should "2 stops trips with 1 minutes interval - times " in {
+    extractSPData(stps2stops, _.secondsOfDay) should be(List(600, 660, 720, 780, 840, 900, 960, 1020, 1080, 1140, 1200))
+  }
+
+  val stps3stopsShortBreak = SimulatedTripPositions(trip3StopsShortBreak, RawCalendarDateReader.dateFromString("20010116"), 120)
+  it should "3 stops, short break trips with 2 minutes interval - size " in {
+    stps3stopsShortBreak.size should be(6)
+  }
+  it should "3 stops, short break trips with 2 minutes interval - times " in {
+    extractSPData(stps3stopsShortBreak, _.secondsOfDay) should be(List(600, 720, 840, 960, 1080, 1200))
+  }
+  it should "3 stops, short break trips with 2 minutes interval - status " in {
+    extractSPData(stps3stopsShortBreak, _.status) should be(List(SimulatedPositionStatus.START, SimulatedPositionStatus.MOVING, SimulatedPositionStatus.MOVING, SimulatedPositionStatus.MOVING, SimulatedPositionStatus.MOVING, SimulatedPositionStatus.END))
+  }
+  it should "3 stops, short break trips with 2 minutes interval - is at stop " in {
+    extractSPData(stps3stopsShortBreak, _.stopId.isDefined) should be(List(true, false, false, false, false, true))
+  }
+
+  val stps3stopsLongBreak = SimulatedTripPositions(trip3StopsLongBreak, RawCalendarDateReader.dateFromString("20010116"), 120)
+  it should "3 stops, long break trips with 2 minutes interval - size " in {
+    stps3stopsLongBreak.size should be(6)
+  }
+  it should "3 stops, short long trips with 2 minutes interval - times " in {
+    extractSPData(stps3stopsLongBreak, _.secondsOfDay) should be(List(600, 720, 840, 960, 1080, 1200))
+  }
+  it should "3 stops, long break trips with 2 minutes interval - StopId(options) " in {
+    extractSPData(stps3stopsLongBreak, _.stopId) should be(List(Some(StopId("sid3l-1")), None, Some(StopId("sid3l-2")), Some(StopId("sid3l-2")), None, Some(StopId("sid3l-3"))))
+  }
+  it should "3 stops, long break trips with 2 minutes interval - latitiude " in {
+    extractSPData(stps3stopsLongBreak, _.lat) should equal(List(45, 45 - 2.0 / 3, 44.0, 44.0, 44.0 - 1.0 / 3, 43))
+  }
   it should " simulated, with 1 minute intervals" in {
     val simulatedTripPositions = SimulatedTripPositions(trip1, RawCalendarDateReader.dateFromString("20010116"), 60)
-    simulatedTripPositions.size should be(34)
+    simulatedTripPositions.size should be(31)
+    simulatedTripPositions.positions.head.secondsOfDay should be(14 * 3600 + 1 * 60)
     simulatedTripPositions.positions.head.status should be(SimulatedPositionStatus.START)
     simulatedTripPositions.positions(1).status should be(SimulatedPositionStatus.MOVING)
     simulatedTripPositions.positions.last.status should be(SimulatedPositionStatus.END)
 
-    List(0, 2, 3, 31, 32).map(i => simulatedTripPositions.positions(i))
-      .map(_.lat).map(x => (x * 1000).round / 1000.0) should equal(List(45.0, 45.0, 45.03, 44.35, 44.3))
-
+    List(0, 2, 3, 29, 30).map(i => simulatedTripPositions.positions(i))
+      .map(_.lat) should equal(List(45.0, 45.06666666666666, 45.099999999999994, 44.46666666666667, 44.3))
   }
-
 
   // a mock function to interpolate a SimulatedTripPositions, with minute increment
   def toSimTrip(id: String,
-                fromTime: String,
-                toTime: String,
-                fromStop: String,
-                toStop: String,
-                fromLat: Double,
-                toLat: Double,
-                fromLng: Double,
-                toLng: Double
-               ): SimulatedTripPositions = {
+    fromTime: String,
+    toTime: String,
+    fromStop: String,
+    toStop: String,
+    fromLat: Double,
+    toLat: Double,
+    fromLng: Double,
+    toLng: Double): SimulatedTripPositions = {
     val tripId = TripId(id)
     val agencyId = AgencyId("agcy")
     val routeShortName = RouteShortName("rsn")

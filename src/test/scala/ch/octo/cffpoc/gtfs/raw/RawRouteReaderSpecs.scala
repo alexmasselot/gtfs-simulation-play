@@ -1,7 +1,7 @@
 package ch.octo.cffpoc.gtfs.raw
 
-import ch.octo.cffpoc.gtfs.{RawStop, RouteType, StopId, StopName}
-import org.scalatest.{FlatSpec, Matchers}
+import ch.octo.cffpoc.gtfs.{ RawStop, RouteType, StopId, StopName }
+import org.scalatest.{ FlatSpec, Matchers }
 
 /**
  * Created by alex on 17/02/16.
@@ -18,7 +18,7 @@ class RawRouteReaderSpecs extends FlatSpec with Matchers {
   it should "size" in {
     load.size should equal(2)
   }
-  it should "have read route type" in{
+  it should "have read route type" in {
     val route = load.next()
     route.routeType should equal(RouteType.RAIL)
   }

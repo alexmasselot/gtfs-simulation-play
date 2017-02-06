@@ -1,11 +1,11 @@
 package ch.octo.cffpoc.gtfs
 
 import ch.octo.cffpoc.gtfs.raw.RawCalendarDateReader
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{ FlatSpec, Matchers }
 
 /**
-  * Created by alex on 17/02/16.
-  */
+ * Created by alex on 17/02/16.
+ */
 class GTFSSystemSpecs extends FlatSpec with Matchers {
   behavior of "GTFSSystem"
 
@@ -52,7 +52,6 @@ class GTFSSystemSpecs extends FlatSpec with Matchers {
       .map(_.tripId)
       .toSet should equal(Set(TripId("3369:1"), TripId("3369:3"), TripId("682")))
   }
-
 
   it should "IR: routes only countTrips" in {
     systemIR.countTrips should be(4)

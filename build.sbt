@@ -22,7 +22,8 @@ libraryDependencies ++= Seq(
   filters,
   "com.typesafe.play" %% "play-json" % "2.5.8",
   "com.github.tototoshi" %% "scala-csv" % "1.3.0",
-  "com.github.nscala-time" %% "nscala-time" % "2.10.0"
+  "com.github.nscala-time" %% "nscala-time" % "2.10.0",
+  "com.yammer.metrics" % "metrics-core" % "2.1.2"
 )
 
 scalaSource in Compile := baseDirectory.value / "src/main/scala"
