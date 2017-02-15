@@ -7,6 +7,7 @@ import akka.event.Logging
 import akka.stream.{ Materializer, OverflowStrategy }
 import akka.stream.OverflowStrategy._
 import akka.stream.scaladsl.{ Keep, Sink, Source, SourceQueue }
+import ch.octo.cffpoc.ScheduleEnvironment
 import ch.octo.cffpoc.Serializers._
 import ch.octo.cffpoc.gtfs.raw.RawCalendarDateReader
 import ch.octo.cffpoc.gtfs.simulator._
@@ -26,21 +27,12 @@ import scala.concurrent.{ ExecutionContext, Future, Promise }
  * Created by alex on 30/03/16.
  */
 
-class SimulatorController @Inject() (configuration: Configuration)(implicit actorSystem: ActorSystem,
-    mat: Materializer,
-    ec: ExecutionContext) extends Controller {
+class SimulatorController @Inject() (
+    configuration: Configuration,
+    scheduleEnvironment: ScheduleEnvironment)(implicit actorSystem: ActorSystem,
+        mat: Materializer,
+        ec: ExecutionContext) extends Controller {
   val logger = LoggerFactory.getLogger("SimulatorController")
-
-  val path = "src/main/resources/gtfs_complete"
-  lazy val gtfsSystem = GTFSSystem.load(path
-  //    , {
-  //    (rr: RawRoute) =>
-  //      //rr.routeType == RouteType.RAIL
-  //      ((rr.routeType != RouteType.BUS) || rr.agencyId == AgencyId("000801")) && (rr.routeType != RouteType.TRAM)
-  //  }
-  )
-  val date = RawCalendarDateReader.dateFromString("20161005")
-  lazy val trips = gtfsSystem.findAllTripsByDate(date)
 
   class ActorForward(queue: SourceQueue[JsValue]) extends Actor with ActorLogging {
     override def receive: Receive = {
@@ -64,24 +56,23 @@ class SimulatorController @Inject() (configuration: Configuration)(implicit acto
     maxLng: Double,
     cityTransit: Boolean,
     accelerationFactor: Double) = {
-    positions(accelerationFactor,
-      {
-        (trip: Trip) =>
-          val rawRoute = trip.route
-          val ctCond = cityTransit || (((rawRoute.routeType != RouteType.BUS) || rawRoute.agencyId == AgencyId("000801")) && (rawRoute.routeType != RouteType.TRAM))
-          ctCond && trip.stopTimes.exists({
-            stopTime =>
-              val lat = stopTime.stop.lat
-              val lng = stopTime.stop.lng
-              !(
-                (lat < minLat)
-                || (lat > maxLat)
-                || (lng < minLng)
-                || (lng > maxLng)
-              )
-          })
+    positions(accelerationFactor, {
+      (trip: Trip) =>
+        val rawRoute = trip.route
+        val ctCond = cityTransit || (((rawRoute.routeType != RouteType.BUS) || rawRoute.agencyId == AgencyId("000801")) && (rawRoute.routeType != RouteType.TRAM))
+        ctCond && trip.stopTimes.exists({
+          stopTime =>
+            val lat = stopTime.stop.lat
+            val lng = stopTime.stop.lng
+            !(
+              (lat < minLat)
+              || (lat > maxLat)
+              || (lng < minLng)
+              || (lng > maxLng)
+            )
+        })
 
-      })
+    })
   }
 
   def positionsAllNoCityTransport =
@@ -99,9 +90,9 @@ class SimulatorController @Inject() (configuration: Configuration)(implicit acto
     futureQueue.map { queue =>
       val actorForward = actorSystem.actorOf(Props(new ActorForward(queue)))
       val ta = TimeAccelerator(System.currentTimeMillis(), 5 * 3600, accelerationFactor)
-      val actualTrips = trips.filter(filterTrips)
+      val actualTrips = scheduleEnvironment.trips.filter(filterTrips)
       logger.info("launching scheduled trips")
-      val actorSimulatedTrips = actorSystem.actorOf(Props(new ActorSimulatedTrips(actorForward, ta, actualTrips, date, accelerationFactor)))
+      val actorSimulatedTrips = actorSystem.actorOf(Props(new ActorSimulatedTrips(actorForward, ta, actualTrips, scheduleEnvironment.date, accelerationFactor)))
 
       queue.watchCompletion().map { done =>
         actorForward ! PoisonPill

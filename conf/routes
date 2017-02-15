@@ -1,6 +1,8 @@
 GET        /static-data/agency                 ch.octo.cffpoc.controllers.StaticDataController.agencies
 GET        /static-data/stop                   ch.octo.cffpoc.controllers.StaticDataController.stops
-GET        /sched/test                          ch.octo.cffpoc.controllers.SchedulerController.test
-GET        /sched/play                          ch.octo.cffpoc.controllers.SchedulerController.playbook
+GET        /sched/test                         ch.octo.cffpoc.controllers.SchedulerController.test
+GET        /sched/play                         ch.octo.cffpoc.controllers.SchedulerController.playbook
 GET        /simulator/positions-ch             ch.octo.cffpoc.controllers.SimulatorController.positionsAllNoCityTransport
 GET        /simulator/positions-bounded        ch.octo.cffpoc.controllers.SimulatorController.positionsBounded(minLat:Double ?= 46.0, maxLat:Double?=47.0, minLng:Double ?= 6.0, maxLng:Double ?=8.0, cityTransit:Boolean ?= false, accelerationFactor:Double ?= 500)
+GET        /                              controllers.Assets.at(path="/public", file="index.html")
+GET        /*file                              controllers.Assets.at(path="/public", file)

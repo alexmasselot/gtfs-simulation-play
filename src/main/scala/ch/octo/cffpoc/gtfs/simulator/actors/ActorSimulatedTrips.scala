@@ -26,7 +26,7 @@ class ActorSimulatedTrips(actorSink: ActorRef,
 
   override def receive: Receive = {
     case StartScheduleTrip(trip) =>
-      log.info(s"launching scheduled trip ${trip.tripId}")
+      log.debug(s"launching scheduled trip ${trip.tripId}")
       val stp = SimulatedTripPositions(trip, date, averagSecondIncrement, true)
       stp.positions.foreach({ sp =>
         val in = timeAccelerator.inMS(sp.secondsOfDay)

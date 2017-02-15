@@ -59,6 +59,6 @@ class ExceptionDater(val startDate: LocalDate, val endDate: LocalDate, val excep
 
 object ExceptionDater {
   def load(calendar: RawCalendar, itExceptionDates: Iterator[RawCalendarDate]): ExceptionDater = {
-    return itExceptionDates.foldLeft(new ExceptionDater(calendar.dateStart, calendar.dateEnd))((ed, rcd) => ed.addException(rcd.serviceId, rcd.date))
+    return itExceptionDates.foldLeft(new ExceptionDater(calendar.dateStart.minusDays(3), calendar.dateEnd.plusDays(3)))((ed, rcd) => ed.addException(rcd.serviceId, rcd.date))
   }
 }

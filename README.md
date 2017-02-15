@@ -1,25 +1,37 @@
-#Streaming the CFF train position
+# GTFS-simulation-web
 
-Reading the raw position from Kafka, we want to get the current position of all train and broadcast back some current location
+The application reads gtfs transport schedule data from an unzipped directory and serve them via a REST API.
+The play/scala source code in this repository handle the backend application, although the packageed archived contains both sback and front end components..
 
-## dev
+A [blog]() post explains the whole story
 
-A kafka broker must be up (consider ../devtools/cff_mock_feeder & docker-compose up).
-The configuration is in conf/application.conf but the file location can be changed via `-Dconfig.file=/wherever/you.conf`
+Enjoy!
 
-    ./activator run
- 
-And you can check out what is coming on kafka
+## Download and unzip gtfs data
 
-    kafka_2.11-0.8.2.2 >bin/kafka-console-consumer.sh --zookeeper $(docker-machine ip default):2181  --topic train_position_snapshot
-    
-### Testing
+Being focus on Switzerland by the JavaScript application, head to http://gtfs.geops.ch/ and download one of the feeds.
+unzip it into a directory (*e.g.* $HOME/tmp/gtfs/)
 
+## Packaged distribution
+
+You just want to run the app?
+Hopefully, an archive has been packaged, with the REST backend and the JavaScript application.
+You only need Java 8 installed.
+
+Download the latest zip archive from [target/universal/](target/universal/) and unzip it.
+From within the extracted directory
+
+    bin/gtfs-simulation-play -Dschedule.gtfs.path=$HOME/tmp/gtfs/ -Dschedule.date=20170213
+
+
+## Development
+
+### code & run
+
+The stack uses activator
+
+    ./activator ~run
     ./activator ~test
- 
- 
-##Build
 
-### Docker
 
-    ./activator docker
+### Continuous build
