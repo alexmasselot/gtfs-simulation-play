@@ -27,8 +27,8 @@ class ExceptionDaterSpecs extends FlatSpec with Matchers {
 
   it should "boundary dates" in {
     val ed = exceptionDater
-    ed.startDate shouldEqual (RawCalendarDateReader.dateFromString("20151213"))
-    ed.endDate shouldEqual (RawCalendarDateReader.dateFromString("20161212"))
+    ed.startDate shouldEqual (RawCalendarDateReader.dateFromString("20151210"))
+    ed.endDate shouldEqual (RawCalendarDateReader.dateFromString("20161215"))
   }
 
   it should "countService" in {
@@ -55,12 +55,12 @@ class ExceptionDaterSpecs extends FlatSpec with Matchers {
 
   it should "exception is thrown without date before scope" in {
     an[IndexOutOfBoundsException] should be thrownBy {
-      exceptionDater.isRunning(ServiceId("3369:3:3:s"), RawCalendarDateReader.dateFromString("20151212"))
+      exceptionDater.isRunning(ServiceId("3369:3:3:s"), RawCalendarDateReader.dateFromString("20151209"))
     }
   }
   it should "exception is thrown without date after scope" in {
     an[IndexOutOfBoundsException] should be thrownBy {
-      exceptionDater.isRunning(ServiceId("3369:3:3:s"), RawCalendarDateReader.dateFromString("20161213"))
+      exceptionDater.isRunning(ServiceId("3369:3:3:s"), RawCalendarDateReader.dateFromString("20161216"))
     }
   }
 
