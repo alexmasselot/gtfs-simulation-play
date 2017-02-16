@@ -23,7 +23,7 @@ From within the extracted directory:
     bin/gtfs-simulation-play -Dschedule.gtfs.path=$HOME/tmp/gtfs/ -Dschedule.date=20170213
 
 With large data, such as the full Swiss schedule for one year, it can take up to 2.5 minutes to start on a Macbok pro.
- Then head to http://locahost:9000 and enjoy
+Then head to http://localhost:9000 and enjoy!
 
 ## Development
 
