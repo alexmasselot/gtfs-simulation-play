@@ -1,17 +1,17 @@
 import play.sbt.PlayImport._
-import com.typesafe.sbt.packager.docker._
 import play.sbt.routes.RoutesKeys._
-
-enablePlugins(DockerPlugin)
+import NativePackagerHelper._
 
 enablePlugins(JavaAppPackaging)
+enablePlugins(UniversalPlugin)
+
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
 
 name := """gtfs-simulation-play"""
 organization := "ch.octo"
-version := "0.1.2"
+version := "0.1.3"
 scalaVersion := Version.scala
 maintainer := "amasselot@octo.com"
 
@@ -20,7 +20,7 @@ libraryDependencies ++= Dependencies.sparkAkkaHadoop
 libraryDependencies ++= Seq(
   cache,
   filters,
-  "com.typesafe.play" %% "play-json" % "2.5.8",
+  "com.typesafe.play" %% "play-json" % "2.5.12",
   "com.github.tototoshi" %% "scala-csv" % "1.3.0",
   "com.github.nscala-time" %% "nscala-time" % "2.10.0",
   "com.yammer.metrics" % "metrics-core" % "2.1.2"
@@ -44,21 +44,6 @@ initialCommands in console :=
     |import com.typesafe.config.ConfigFactory
     | """.stripMargin
 
-//mappings in Docker := mappings.value
-
-packageName in Docker := s"${organization.value}/${name.value}"
-
-dockerBaseImage := "java:8"
-
-packageName in Docker := "alexmass/cff-play-realtime"
-
-version in Docker := "0.2.5"
-
-dockerExposedPorts := Seq(9000)
-
-//mappings in Docker += {
-//  val conf = baseDirectory.value / "conf" / "application-docker.conf"
-//  conf -> "conf/application.conf"
-//}
+mappings in Universal ++= directory("data")
 
 routesGenerator := InjectedRoutesGenerator
