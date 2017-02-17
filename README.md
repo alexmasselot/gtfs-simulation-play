@@ -1,6 +1,6 @@
 # GTFS-simulation-web
 
-[<center><img src="./docs/swiss-transport-youtube.png" width=300/></center>](https://www.youtube.com/watch?v=outAs2dGVf4)
+<p align="center">[<img src="./docs/swiss-transport-youtube.png" width=300/>](https://www.youtube.com/watch?v=outAs2dGVf4)</p>
 
 The application reads gtfs transport schedule data from an unzipped directory and serve them via a REST API.
 The play/scala source code in this repository handle the backend application, although the packageed archived contains both sback and front end components..
