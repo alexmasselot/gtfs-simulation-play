@@ -55,7 +55,7 @@ The stack uses activator
 
 ### Distribution
 
-A packaged zip is built in `target/universal`. This is the file to be downloaded in the previsouly mentioned link
+A packaged zip is built in `target/universal`. This is the file to be downloaded in the previously mentioned link
 
     ./activator dist
 
@@ -63,6 +63,22 @@ A packaged zip is built in `target/universal`. This is the file to be downloaded
 
 SImply with travis https://travis-ci.org/alexmasselot/gtfs-simulation-play
 
-## License
+##Author
 
+Alexandre Masselot amasselot@octo.com
+
+## License & third parties
+
+This work is covered by a BSD license. Use it as you wish.
+
+### Third parties
+
+Of course, we user mainy third parties components. Among others, the packaged distributions includes
+
+  * GTFS swiss schedule http://gtfs.geops.ch/
+  * topojson Swiss map https://github.com/interactivethings/swiss-maps
+  * Activator/play http://www.lightbend.com/community/core-tools/activator-and-sbt
+  * Scala, d3.js, nodejs...
+
+Many thanks to all of them
 
