@@ -73,12 +73,12 @@ This work is covered by a BSD license. Use it as you wish.
 
 ### Third parties
 
-Of course, we user mainy third parties components. Among others, the packaged distributions includes
+Of course, we user many third parties components. Among others, the packaged distribution includes:
 
   * GTFS swiss schedule http://gtfs.geops.ch/
   * topojson Swiss map https://github.com/interactivethings/swiss-maps
   * Activator/play http://www.lightbend.com/community/core-tools/activator-and-sbt
   * Scala, d3.js, nodejs...
 
-Many thanks to all of them
+Many thanks to all of them.
 
